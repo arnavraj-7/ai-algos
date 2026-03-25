@@ -113,14 +113,12 @@ function solveBFS(initial: Board): Step[] {
     const { board, path } = queue.shift()!;
     explored++;
 
-    if (explored % 20 === 0 || explored <= 10) {
-      steps.push({
-        board,
-        action: `Exploring node #${explored} (queue: ${queue.length})`,
-        type: "explore",
-        nodesExplored: explored,
-      });
-    }
+    steps.push({
+      board,
+      action: `Exploring node #${explored} (queue: ${queue.length})`,
+      type: "explore",
+      nodesExplored: explored,
+    });
 
     if (isGoal(board)) {
       for (const p of path) {
@@ -183,14 +181,12 @@ function solveDFS(initial: Board): Step[] {
     visited.add(boardKey(board));
     explored++;
 
-    if (explored % 30 === 0 || explored <= 10) {
-      steps.push({
-        board,
-        action: `Depth ${depth} — node #${explored}`,
-        type: "explore",
-        nodesExplored: explored,
-      });
-    }
+    steps.push({
+      board,
+      action: `Depth ${depth} — node #${explored}`,
+      type: "explore",
+      nodesExplored: explored,
+    });
 
     if (isGoal(board)) {
       for (const p of path) {
@@ -480,6 +476,10 @@ export default function EightPuzzlePage() {
             label="Nodes Explored"
             value={currentStepData?.nodesExplored ?? 0}
           />
+          <StatCard
+            label="Solution Length"
+            value={steps.filter((s) => s.type === "solution").length + " moves"}
+          />
           {currentStepData?.fCost !== undefined && (
             <>
               <StatCard label="f(n) = g + h" value={currentStepData.fCost} />
@@ -487,7 +487,6 @@ export default function EightPuzzlePage() {
               <StatCard label="h(n) heuristic" value={currentStepData.hCost ?? 0} />
             </>
           )}
-          <StatCard label="Total Steps" value={steps.length} />
         </div>
       }
       log={
