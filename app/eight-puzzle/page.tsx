@@ -109,16 +109,18 @@ function solveBFS(initial: Board): Step[] {
     nodesExplored: 0,
   });
 
-  while (queue.length > 0 && explored < 5000) {
+  while (queue.length > 0 && explored < 100000) {
     const { board, path } = queue.shift()!;
     explored++;
 
-    steps.push({
-      board,
-      action: `Exploring node #${explored} (queue: ${queue.length})`,
-      type: "explore",
-      nodesExplored: explored,
-    });
+    if (explored <= 20 || explored % 100 === 0) {
+      steps.push({
+        board,
+        action: `Exploring node #${explored} (queue: ${queue.length})`,
+        type: "explore",
+        nodesExplored: explored,
+      });
+    }
 
     if (isGoal(board)) {
       for (const p of path) {
@@ -177,16 +179,18 @@ function solveDFS(initial: Board): Step[] {
     depth: number,
     path: { board: Board; move: string }[]
   ): boolean {
-    if (explored > 5000) return false;
+    if (explored > 100000) return false;
     visited.add(boardKey(board));
     explored++;
 
-    steps.push({
-      board,
-      action: `Depth ${depth} — node #${explored}`,
-      type: "explore",
-      nodesExplored: explored,
-    });
+    if (explored <= 20 || explored % 100 === 0) {
+      steps.push({
+        board,
+        action: `Depth ${depth} — node #${explored}`,
+        type: "explore",
+        nodesExplored: explored,
+      });
+    }
 
     if (isGoal(board)) {
       for (const p of path) {
@@ -253,7 +257,7 @@ function solveAStar(initial: Board): Step[] {
     hCost: h0,
   });
 
-  while (open.length > 0 && explored < 5000) {
+  while (open.length > 0 && explored < 100000) {
     open.sort((a, b) => a.g + a.h - (b.g + b.h));
     const { board, g, h, path } = open.shift()!;
     const key = boardKey(board);
