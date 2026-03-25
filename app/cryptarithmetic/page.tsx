@@ -26,7 +26,10 @@ type Step = {
 //   Col 2: E + O = N  (+ carry1 → carry2)
 //   Col 3: S + M = O  (+ carry2 → carry3)
 //   Col 4: carry3 = M
-const LETTERS_ORDER = ["D", "Y", "N", "R", "E", "O", "S", "M"];
+// Order: assign column-by-column so constraints fire ASAP
+// Col 0: D + E → Y  |  Col 1: N + R (+ carry) → E already set
+// Col 2: (E) + O → N already set  |  Col 3: S + M → O already set
+const LETTERS_ORDER = ["D", "E", "Y", "N", "R", "O", "S", "M"];
 const ALL_LETTERS = ["S", "E", "N", "D", "M", "O", "R", "Y"];
 const WORD1 = ["S", "E", "N", "D"];
 const WORD2 = ["M", "O", "R", "E"];
@@ -145,19 +148,13 @@ function solveCryptarithmetic(): Step[] {
       usedDigits.add(digit);
       explored++;
 
-      steps.push({
-        assignment: { ...assignment },
-        action: `Assign ${letter} = ${digit}`,
-        type: "explore",
-        nodesExplored: explored,
-      });
-
       // Check column constraints immediately
       const { ok, msg } = checkColumns(assignment);
       if (!ok) {
+        // Log constraint violation
         steps.push({
           assignment: { ...assignment },
-          action: `Constraint violated: ${msg}`,
+          action: `Try ${letter}=${digit} → ${msg}`,
           type: "backtrack",
           nodesExplored: explored,
         });
@@ -166,14 +163,16 @@ function solveCryptarithmetic(): Step[] {
         continue;
       }
 
-      if (solve(letterIdx + 1)) return true;
-
+      // Log successful assignment
       steps.push({
         assignment: { ...assignment },
-        action: `Backtrack: undo ${letter} = ${digit}`,
-        type: "backtrack",
+        action: `Assign ${letter} = ${digit}`,
+        type: "explore",
         nodesExplored: explored,
       });
+
+      if (solve(letterIdx + 1)) return true;
+
       assignment[letter] = null;
       usedDigits.delete(digit);
     }

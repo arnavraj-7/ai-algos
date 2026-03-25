@@ -37,15 +37,6 @@ const puzzles = [
     icon: "⛵",
     unit: "Unit 1",
   },
-  {
-    title: "Cryptarithmetic",
-    description:
-      "SEND + MORE = MONEY — assign digits to letters satisfying all constraints. CSP with backtracking.",
-    algorithms: ["CSP", "Backtracking"],
-    href: "/cryptarithmetic",
-    icon: "🔢",
-    unit: "Unit 3",
-  },
 ];
 
 export default function Home() {
