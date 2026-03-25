@@ -195,7 +195,7 @@ export default function MissionariesPage() {
           title="Missionaries & Cannibals"
           description="BFS state-space search for the classic river crossing puzzle"
           icon="⛵"
-          color="from-amber-400 to-orange-400"
+          color=""
         />
       }
       visualization={
@@ -382,7 +382,7 @@ export default function MissionariesPage() {
           <h3 className="text-sm font-semibold text-zinc-300 mb-3">
             Statistics
           </h3>
-          <StatCard label="Algorithm" value="BFS" color="text-amber-400" />
+          <StatCard label="Algorithm" value="BFS" />
           <StatCard
             label="States Explored"
             value={currentData?.nodesExplored ?? 0}

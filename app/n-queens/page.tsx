@@ -196,7 +196,7 @@ export default function NQueensPage() {
           title="N-Queens Solver"
           description="Backtracking with constraint satisfaction"
           icon="♛"
-          color="from-blue-400 to-cyan-400"
+          color=""
         />
       }
       visualization={
@@ -335,9 +335,9 @@ export default function NQueensPage() {
           <h3 className="text-sm font-semibold text-zinc-300 mb-3">
             Statistics
           </h3>
-          <StatCard label="Board Size" value={`${n} × ${n}`} color="text-blue-400" />
+          <StatCard label="Board Size" value={`${n} × ${n}`} />
           <StatCard label="Queens Placed" value={`${queensPlaced} / ${n}`} />
-          <StatCard label="Backtracks" value={backtracks} color="text-red-400" />
+          <StatCard label="Backtracks" value={backtracks} />
           <StatCard label="Total Steps" value={steps.length} />
         </div>
       }

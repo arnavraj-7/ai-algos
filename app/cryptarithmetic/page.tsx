@@ -265,7 +265,7 @@ export default function CryptarithmeticPage() {
           title="Cryptarithmetic Solver"
           description="SEND + MORE = MONEY — CSP with Backtracking"
           icon="🔢"
-          color="from-red-400 to-rose-400"
+          color=""
         />
       }
       visualization={
@@ -363,13 +363,13 @@ export default function CryptarithmeticPage() {
           <h3 className="text-sm font-semibold text-zinc-300 mb-3">
             Statistics
           </h3>
-          <StatCard label="Algorithm" value="CSP + Backtrack" color="text-red-400" />
+          <StatCard label="Algorithm" value="CSP + Backtrack" />
           <StatCard label="Letters Assigned" value={`${assigned} / 8`} />
           <StatCard
             label="Nodes Explored"
             value={currentData?.nodesExplored ?? 0}
           />
-          <StatCard label="Backtracks" value={backtracks} color="text-red-400" />
+          <StatCard label="Backtracks" value={backtracks} />
           <StatCard label="Total Steps" value={steps.length} />
         </div>
       }

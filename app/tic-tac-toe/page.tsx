@@ -355,7 +355,7 @@ export default function TicTacToePage() {
           title="Tic-Tac-Toe AI"
           description="Minimax with Alpha-Beta Pruning — try to beat the unbeatable AI"
           icon="⭕"
-          color="from-green-400 to-emerald-400"
+          color=""
         />
       }
       visualization={
@@ -499,14 +499,14 @@ export default function TicTacToePage() {
           <StatCard
             label="Algorithm"
             value={useAlphaBeta ? "Minimax + α-β" : "Minimax"}
-            color="text-green-400"
+            color="text-zinc-100"
           />
           <StatCard label="Nodes Evaluated" value={totalStats.nodesEvaluated} />
           {useAlphaBeta && (
             <StatCard
               label="Branches Pruned"
               value={totalStats.pruned}
-              color="text-red-400"
+              color="text-zinc-100"
             />
           )}
           <StatCard

@@ -380,7 +380,7 @@ export default function EightPuzzlePage() {
           title="8-Puzzle Solver"
           description="Compare A*, BFS, and DFS searching for the solution"
           icon="🧩"
-          color="from-purple-400 to-violet-400"
+          color=""
         />
       }
       visualization={
@@ -453,10 +453,10 @@ export default function EightPuzzlePage() {
                     setCurrentStep(0);
                     setIsPlaying(false);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                     algorithm === algo
-                      ? "bg-purple-600 text-white"
-                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+                      ? "bg-zinc-100 text-zinc-900 border-zinc-100"
+                      : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-zinc-700"
                   }`}
                 >
                   {algo === "astar" ? "A*" : algo.toUpperCase()}
@@ -474,7 +474,7 @@ export default function EightPuzzlePage() {
           <StatCard
             label="Algorithm"
             value={algorithm === "astar" ? "A*" : algorithm.toUpperCase()}
-            color="text-purple-400"
+            color="text-zinc-100"
           />
           <StatCard
             label="Nodes Explored"
@@ -482,7 +482,7 @@ export default function EightPuzzlePage() {
           />
           {currentStepData?.fCost !== undefined && (
             <>
-              <StatCard label="f(n) = g + h" value={currentStepData.fCost} color="text-blue-400" />
+              <StatCard label="f(n) = g + h" value={currentStepData.fCost} />
               <StatCard label="g(n) cost" value={currentStepData.gCost ?? 0} />
               <StatCard label="h(n) heuristic" value={currentStepData.hCost ?? 0} />
             </>
