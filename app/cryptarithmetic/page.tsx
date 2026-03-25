@@ -16,22 +16,27 @@ type Step = {
   assignment: Assignment;
   action: string;
   type: "explore" | "solution" | "backtrack" | "info" | "success";
-  checking?: string; // which column is being checked
   nodesExplored: number;
 };
 
 // ─── Algorithm: SEND + MORE = MONEY ──────────────────────────────
-const LETTERS = ["S", "E", "N", "D", "M", "O", "R", "Y"];
+// Letters ordered by column (right to left) for maximum constraint pruning:
+//   Col 0: D + E = Y  (+ carry0)
+//   Col 1: N + R = E  (+ carry0 → carry1)
+//   Col 2: E + O = N  (+ carry1 → carry2)
+//   Col 3: S + M = O  (+ carry2 → carry3)
+//   Col 4: carry3 = M
+const LETTERS_ORDER = ["D", "Y", "N", "R", "E", "O", "S", "M"];
+const ALL_LETTERS = ["S", "E", "N", "D", "M", "O", "R", "Y"];
 const WORD1 = ["S", "E", "N", "D"];
 const WORD2 = ["M", "O", "R", "E"];
 const RESULT = ["M", "O", "N", "E", "Y"];
 
-function wordToNumber(word: string[], assignment: Assignment): number | null {
+function wordToNumber(word: string[], a: Assignment): number | null {
   let num = 0;
   for (const letter of word) {
-    if (assignment[letter] === null || assignment[letter] === undefined)
-      return null;
-    num = num * 10 + assignment[letter]!;
+    if (a[letter] === null || a[letter] === undefined) return null;
+    num = num * 10 + a[letter]!;
   }
   return num;
 }
@@ -39,62 +44,98 @@ function wordToNumber(word: string[], assignment: Assignment): number | null {
 function solveCryptarithmetic(): Step[] {
   const steps: Step[] = [];
   const assignment: Assignment = {};
-  for (const l of LETTERS) assignment[l] = null;
+  for (const l of ALL_LETTERS) assignment[l] = null;
   let explored = 0;
 
   steps.push({
     assignment: { ...assignment },
-    action: "CSP: Solving SEND + MORE = MONEY",
+    action: "CSP: Solving SEND + MORE = MONEY (column-by-column pruning)",
     type: "info",
     nodesExplored: 0,
   });
 
   const usedDigits = new Set<number>();
 
-  function isConsistent(partial: Assignment): boolean {
-    // Check column by column from right to left for early pruning
-    const a = partial;
-    // All assigned values must be unique (enforced by usedDigits)
-    // S and M cannot be 0
-    if (a["S"] === 0 || a["M"] === 0) return false;
-    return true;
-  }
+  // Check column constraints as soon as all letters in a column are assigned
+  // Returns: true if consistent, false if violated
+  function checkColumns(a: Assignment): { ok: boolean; msg: string } {
+    // Column 0 (ones): D + E = Y (mod 10), carry0 = floor((D+E)/10)
+    if (a["D"] !== null && a["E"] !== null && a["Y"] !== null) {
+      const sum0 = a["D"]! + a["E"]!;
+      if (sum0 % 10 !== a["Y"]!) {
+        return {
+          ok: false,
+          msg: `Col 1: ${a["D"]} + ${a["E"]} = ${sum0}, last digit ${sum0 % 10} ≠ Y(${a["Y"]})`,
+        };
+      }
+      const carry0 = Math.floor(sum0 / 10);
 
-  function checkFull(a: Assignment): boolean {
-    const s = wordToNumber(WORD1, a);
-    const m = wordToNumber(WORD2, a);
-    const r = wordToNumber(RESULT, a);
-    if (s === null || m === null || r === null) return false;
-    return s + m === r;
+      // Column 1 (tens): N + R + carry0 = E (mod 10)
+      if (a["N"] !== null && a["R"] !== null) {
+        const sum1 = a["N"]! + a["R"]! + carry0;
+        if (sum1 % 10 !== a["E"]!) {
+          return {
+            ok: false,
+            msg: `Col 2: ${a["N"]} + ${a["R"]} + carry(${carry0}) = ${sum1}, last digit ${sum1 % 10} ≠ E(${a["E"]})`,
+          };
+        }
+        const carry1 = Math.floor(sum1 / 10);
+
+        // Column 2 (hundreds): E + O + carry1 = N (mod 10)
+        if (a["O"] !== null) {
+          const sum2 = a["E"]! + a["O"]! + carry1;
+          if (sum2 % 10 !== a["N"]!) {
+            return {
+              ok: false,
+              msg: `Col 3: ${a["E"]} + ${a["O"]} + carry(${carry1}) = ${sum2}, last digit ${sum2 % 10} ≠ N(${a["N"]})`,
+            };
+          }
+          const carry2 = Math.floor(sum2 / 10);
+
+          // Column 3 (thousands): S + M + carry2 = O (mod 10)
+          if (a["S"] !== null && a["M"] !== null) {
+            const sum3 = a["S"]! + a["M"]! + carry2;
+            if (sum3 % 10 !== a["O"]!) {
+              return {
+                ok: false,
+                msg: `Col 4: ${a["S"]} + ${a["M"]} + carry(${carry2}) = ${sum3}, last digit ${sum3 % 10} ≠ O(${a["O"]})`,
+              };
+            }
+            const carry3 = Math.floor(sum3 / 10);
+
+            // Column 4 (ten-thousands): carry3 = M
+            if (carry3 !== a["M"]!) {
+              return {
+                ok: false,
+                msg: `Col 5: carry(${carry3}) ≠ M(${a["M"]})`,
+              };
+            }
+          }
+        }
+      }
+    }
+    return { ok: true, msg: "" };
   }
 
   function solve(letterIdx: number): boolean {
-    if (explored > 10000) return false;
-
-    if (letterIdx === LETTERS.length) {
-      explored++;
-      if (checkFull(assignment)) {
-        const s = wordToNumber(WORD1, assignment)!;
-        const m = wordToNumber(WORD2, assignment)!;
-        const r = wordToNumber(RESULT, assignment)!;
+    if (letterIdx === LETTERS_ORDER.length) {
+      // All assigned — verify full solution
+      const s = wordToNumber(WORD1, assignment)!;
+      const m = wordToNumber(WORD2, assignment)!;
+      const r = wordToNumber(RESULT, assignment)!;
+      if (s + m === r) {
         steps.push({
           assignment: { ...assignment },
-          action: `✓ SOLUTION: ${s} + ${m} = ${r}`,
+          action: `SOLUTION FOUND: ${s} + ${m} = ${r}`,
           type: "success",
           nodesExplored: explored,
         });
         return true;
       }
-      steps.push({
-        assignment: { ...assignment },
-        action: `Constraint check failed — sum doesn't match`,
-        type: "backtrack",
-        nodesExplored: explored,
-      });
       return false;
     }
 
-    const letter = LETTERS[letterIdx];
+    const letter = LETTERS_ORDER[letterIdx];
     const startDigit = letter === "S" || letter === "M" ? 1 : 0;
 
     for (let digit = startDigit; digit <= 9; digit++) {
@@ -104,7 +145,6 @@ function solveCryptarithmetic(): Step[] {
       usedDigits.add(digit);
       explored++;
 
-      // Log this assignment
       steps.push({
         assignment: { ...assignment },
         action: `Assign ${letter} = ${digit}`,
@@ -112,10 +152,12 @@ function solveCryptarithmetic(): Step[] {
         nodesExplored: explored,
       });
 
-      if (!isConsistent(assignment)) {
+      // Check column constraints immediately
+      const { ok, msg } = checkColumns(assignment);
+      if (!ok) {
         steps.push({
           assignment: { ...assignment },
-          action: `${letter} = ${digit} violates constraint (leading zero)`,
+          action: `Constraint violated: ${msg}`,
           type: "backtrack",
           nodesExplored: explored,
         });
@@ -124,19 +166,8 @@ function solveCryptarithmetic(): Step[] {
         continue;
       }
 
-      // Early column check when enough letters assigned
-      if (canCheckPartial(assignment)) {
-        const partialOk = checkPartialColumns(assignment, steps, explored);
-        if (!partialOk) {
-          assignment[letter] = null;
-          usedDigits.delete(digit);
-          continue;
-        }
-      }
-
       if (solve(letterIdx + 1)) return true;
 
-      // Backtrack
       steps.push({
         assignment: { ...assignment },
         action: `Backtrack: undo ${letter} = ${digit}`,
@@ -154,39 +185,12 @@ function solveCryptarithmetic(): Step[] {
   return steps;
 }
 
-function canCheckPartial(a: Assignment): boolean {
-  // Check if D, E, Y are assigned (rightmost column)
-  return a["D"] !== null && a["E"] !== null && a["Y"] !== null;
-}
-
-function checkPartialColumns(
-  a: Assignment,
-  steps: Step[],
-  explored: number
-): boolean {
-  // Check rightmost column: D + E = Y (mod 10)
-  if (a["D"] !== null && a["E"] !== null && a["Y"] !== null) {
-    const sum = a["D"]! + a["E"]!;
-    if (sum % 10 !== a["Y"]!) {
-      steps.push({
-        assignment: { ...a },
-        action: `Column check: ${a["D"]} + ${a["E"]} = ${sum}, but Y=${a["Y"]} (need ${sum % 10})`,
-        type: "backtrack",
-        checking: "column-1",
-        nodesExplored: explored,
-      });
-      return false;
-    }
-  }
-  return true;
-}
-
 // ─── Component ───────────────────────────────────────────────────
 export default function CryptarithmeticPage() {
   const [steps, setSteps] = useState<Step[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(100);
+  const [speed, setSpeed] = useState(200);
   const [solved, setSolved] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -232,13 +236,14 @@ export default function CryptarithmeticPage() {
   }, [currentStep]);
 
   const currentData = steps[currentStep];
-  const assignment = currentData?.assignment ?? Object.fromEntries(LETTERS.map((l) => [l, null]));
+  const assignment =
+    currentData?.assignment ??
+    Object.fromEntries(ALL_LETTERS.map((l) => [l, null]));
   const backtracks = steps
     .slice(0, currentStep + 1)
     .filter((s) => s.type === "backtrack").length;
   const assigned = Object.values(assignment).filter((v) => v !== null).length;
 
-  // Build display with substituted digits
   function renderWord(word: string[]) {
     return word.map((letter, i) => (
       <motion.div
@@ -291,22 +296,18 @@ export default function CryptarithmeticPage() {
 
           {/* Equation display */}
           <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-6 flex flex-col items-end gap-3">
-            {/* SEND */}
             <div className="flex gap-1.5">{renderWord(WORD1)}</div>
-            {/* + MORE */}
             <div className="flex gap-1.5 items-center">
               <span className="text-2xl font-bold text-zinc-500 mr-2">+</span>
               {renderWord(WORD2)}
             </div>
-            {/* Line */}
             <div className="w-full h-px bg-zinc-700 my-1" />
-            {/* MONEY */}
             <div className="flex gap-1.5">{renderWord(RESULT)}</div>
           </div>
 
           {/* Assignment table */}
           <div className="flex gap-2 flex-wrap justify-center">
-            {LETTERS.map((letter) => (
+            {ALL_LETTERS.map((letter) => (
               <div
                 key={letter}
                 className={`flex flex-col items-center px-3 py-2 rounded-lg border text-sm font-mono ${
@@ -393,8 +394,4 @@ export default function CryptarithmeticPage() {
       }
     />
   );
-}
-
-function wordToNumber2(word: string[], assignment: Assignment): number | null {
-  return wordToNumber(word, assignment);
 }
